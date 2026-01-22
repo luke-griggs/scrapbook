@@ -10,6 +10,7 @@ function SignInContent() {
   const searchParams = useSearchParams();
 
   // Get invite-related params
+  const inviteToken = searchParams.get("invite");
   const inviteId = searchParams.get("inviteId");
   const inviteEmail = searchParams.get("email");
 
@@ -52,13 +53,30 @@ function SignInContent() {
       if (result.error) {
         setError(result.error.message || "Invalid credentials");
       } else {
+        // Refresh the router to establish the session first
+        router.refresh();
+        
+        // Small delay to ensure session is established before navigation
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        
+        // If coming from an invite, accept it (join the family) before redirecting
+        if (inviteToken) {
+          try {
+            await fetch(`/api/invites/${inviteToken}`, {
+              method: "POST",
+            });
+          } catch (err) {
+            console.error("Error accepting invite:", err);
+            // Continue anyway - they can still record
+          }
+        }
+        
         // Redirect to recording page if coming from invite, otherwise home
         if (inviteId) {
           router.push(`/record/${inviteId}`);
         } else {
           router.push("/");
         }
-        router.refresh();
       }
     } catch {
       setError("An error occurred. Please try again.");
@@ -207,7 +225,13 @@ function SignInContent() {
         <p className="mt-8 text-center text-[13px] text-gray-500">
           Don&apos;t have an account?{" "}
           <Link
-            href={inviteId ? `/sign-up?inviteId=${inviteId}${inviteEmail ? `&email=${inviteEmail}` : ""}` : "/sign-up"}
+            href={inviteId 
+              ? `/sign-up?${new URLSearchParams({
+                  ...(inviteToken && { invite: inviteToken }),
+                  inviteId,
+                  ...(inviteEmail && { email: inviteEmail }),
+                }).toString()}`
+              : "/sign-up"}
             className="text-blue-500 hover:underline"
           >
             Sign up
