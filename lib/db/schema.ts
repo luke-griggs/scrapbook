@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   pgEnum,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -16,7 +17,18 @@ export const inviteStatusEnum = pgEnum("invite_status", [
   "expired",
 ]);
 
-// Users table
+// Better-auth's user table (singular "user")
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Legacy users table (can be removed if not needed)
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -40,9 +52,7 @@ export const familyMembers = pgTable("family_members", {
   familyId: uuid("family_id")
     .notNull()
     .references(() => families.id, { onDelete: "cascade" }),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(), // References better-auth's user table (uses text IDs)
   role: memberRoleEnum("role").default("member").notNull(),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
@@ -71,17 +81,13 @@ export const prompts = pgTable("prompts", {
 // Prompt invitations (sent to family members)
 export const promptInvites = pgTable("prompt_invites", {
   id: uuid("id").defaultRandom().primaryKey(),
-  promptId: uuid("prompt_id")
-    .notNull()
-    .references(() => prompts.id, { onDelete: "cascade" }),
-  familyId: uuid("family_id")
-    .notNull()
-    .references(() => families.id, { onDelete: "cascade" }),
-  senderId: uuid("sender_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+  promptId: uuid("prompt_id").references(() => prompts.id, { onDelete: "cascade" }),
+  promptText: text("prompt_text").notNull(),
+  familyId: uuid("family_id").references(() => families.id, { onDelete: "cascade" }),
+  senderId: text("sender_id").notNull(),
+  senderName: varchar("sender_name", { length: 255 }),
   recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
-  recipientId: uuid("recipient_id").references(() => users.id),
+  recipientId: text("recipient_id"),
   token: varchar("token", { length: 255 }).notNull().unique(),
   status: inviteStatusEnum("status").default("pending").notNull(),
   sentAt: timestamp("sent_at").defaultNow().notNull(),
@@ -95,9 +101,7 @@ export const responses = pgTable("responses", {
   promptInviteId: uuid("prompt_invite_id")
     .notNull()
     .references(() => promptInvites.id, { onDelete: "cascade" }),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   durationSeconds: varchar("duration_seconds", { length: 10 }),
@@ -106,10 +110,8 @@ export const responses = pgTable("responses", {
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const userRelations = relations(user, ({ many }) => ({
   familyMemberships: many(familyMembers),
-  sentInvites: many(promptInvites, { relationName: "sender" }),
-  responses: many(responses),
 }));
 
 export const familiesRelations = relations(families, ({ many }) => ({
@@ -122,9 +124,9 @@ export const familyMembersRelations = relations(familyMembers, ({ one }) => ({
     fields: [familyMembers.familyId],
     references: [families.id],
   }),
-  user: one(users, {
+  user: one(user, {
     fields: [familyMembers.userId],
-    references: [users.id],
+    references: [user.id],
   }),
 }));
 
@@ -149,15 +151,6 @@ export const promptInvitesRelations = relations(promptInvites, ({ one, many }) =
     fields: [promptInvites.familyId],
     references: [families.id],
   }),
-  sender: one(users, {
-    fields: [promptInvites.senderId],
-    references: [users.id],
-    relationName: "sender",
-  }),
-  recipient: one(users, {
-    fields: [promptInvites.recipientId],
-    references: [users.id],
-  }),
   responses: many(responses),
 }));
 
@@ -165,9 +158,5 @@ export const responsesRelations = relations(responses, ({ one }) => ({
   promptInvite: one(promptInvites, {
     fields: [responses.promptInviteId],
     references: [promptInvites.id],
-  }),
-  user: one(users, {
-    fields: [responses.userId],
-    references: [users.id],
   }),
 }));

@@ -1,18 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get invite-related params
+  const inviteId = searchParams.get("inviteId");
+  const inviteEmail = searchParams.get("email");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<"email" | "password">("email");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Pre-fill email from invite
+  useEffect(() => {
+    if (inviteEmail && inviteEmail !== "link@placeholder.com") {
+      setEmail(inviteEmail);
+      setStep("password");
+    }
+  }, [inviteEmail]);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +52,12 @@ export default function SignInPage() {
       if (result.error) {
         setError(result.error.message || "Invalid credentials");
       } else {
-        router.push("/");
+        // Redirect to recording page if coming from invite, otherwise home
+        if (inviteId) {
+          router.push(`/record/${inviteId}`);
+        } else {
+          router.push("/");
+        }
         router.refresh();
       }
     } catch {
@@ -50,9 +69,11 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     try {
+      // Redirect to recording page if coming from invite, otherwise home
+      const callbackURL = inviteId ? `/record/${inviteId}` : "/";
       await signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL,
       });
     } catch {
       setError("Failed to sign in with Google");
@@ -185,7 +206,10 @@ export default function SignInPage() {
 
         <p className="mt-8 text-center text-[13px] text-gray-500">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" className="text-blue-500 hover:underline">
+          <Link
+            href={inviteId ? `/sign-up?inviteId=${inviteId}${inviteEmail ? `&email=${inviteEmail}` : ""}` : "/sign-up"}
+            className="text-blue-500 hover:underline"
+          >
             Sign up
           </Link>
         </p>
@@ -201,5 +225,17 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
