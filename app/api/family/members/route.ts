@@ -39,7 +39,7 @@ export async function GET() {
         id: m.user.id,
         name: m.user.name,
         email: m.user.email,
-        avatarUrl: m.user.avatarUrl,
+        avatarUrl: m.user.image,
       }));
 
     return NextResponse.json({
