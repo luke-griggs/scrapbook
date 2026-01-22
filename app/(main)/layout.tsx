@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 
 const tabs = [
   {
@@ -48,6 +50,49 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, isPending: sessionPending } = useSession();
+  const [familyChecked, setFamilyChecked] = useState(false);
+  const [hasFamily, setHasFamily] = useState(false);
+
+  useEffect(() => {
+    if (sessionPending) return;
+
+    // If not authenticated, redirect to sign-in
+    if (!session?.user) {
+      router.push("/sign-in");
+      return;
+    }
+
+    // Check if user has a family
+    async function checkFamily() {
+      try {
+        const res = await fetch("/api/family");
+        const data = await res.json();
+        if (!data.family) {
+          // User doesn't have a family, redirect to onboarding
+          router.push("/onboarding");
+        } else {
+          setHasFamily(true);
+        }
+      } catch (error) {
+        console.error("Error checking family:", error);
+      } finally {
+        setFamilyChecked(true);
+      }
+    }
+
+    checkFamily();
+  }, [session, sessionPending, router]);
+
+  // Show loading state while checking auth and family
+  if (sessionPending || !familyChecked || !hasFamily) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white pb-20">

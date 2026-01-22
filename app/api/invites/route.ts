@@ -42,7 +42,10 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const isDev = process.env.NODE_ENV === "development";
+    const baseUrl = isDev
+      ? "http://localhost:3000"
+      : process.env.NEXT_PUBLIC_APP_URL || "https://scrapbook.vercel.app";
     const inviteUrl = `${baseUrl}/invite/${token}`;
 
     // Send email if requested

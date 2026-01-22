@@ -61,11 +61,11 @@ function SignUpContent() {
       if (result.error) {
         setError(result.error.message || "Failed to create account");
       } else {
-        // Redirect to recording page if coming from invite, otherwise home
+        // Redirect to recording page if coming from invite, otherwise onboarding
         if (inviteId) {
           router.push(`/record/${inviteId}`);
         } else {
-          router.push("/");
+          router.push("/onboarding");
         }
         router.refresh();
       }
@@ -78,8 +78,8 @@ function SignUpContent() {
 
   const handleGoogleSignIn = async () => {
     try {
-      // Redirect to recording page if coming from invite, otherwise home
-      const callbackURL = inviteId ? `/record/${inviteId}` : "/";
+      // Redirect to recording page if coming from invite, otherwise onboarding
+      const callbackURL = inviteId ? `/record/${inviteId}` : "/onboarding";
       await signIn.social({
         provider: "google",
         callbackURL,

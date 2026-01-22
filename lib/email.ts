@@ -16,7 +16,7 @@ export async function sendInviteEmail({
   inviteUrl,
 }: SendInviteEmailParams) {
   const { data, error } = await resend.emails.send({
-    from: "Scrapbook <onboarding@resend.dev>",
+    from: "Memorybook <hello@memorybook.family>",
     to: [to],
     subject: `${senderName} wants to hear your story`,
     html: generateInviteEmailHtml({ senderName, promptText, inviteUrl }),
@@ -51,7 +51,7 @@ function generateInviteEmailHtml({
           <tr>
             <td style="padding: 32px 32px 24px; text-align: center;">
               <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111827;">
-                Scrapbook
+                Memorybook
               </h1>
             </td>
           </tr>
@@ -96,7 +96,7 @@ function generateInviteEmailHtml({
 
         <!-- Bottom text -->
         <p style="margin: 24px 0 0; font-size: 12px; color: #9ca3af; text-align: center;">
-          Scrapbook - Preserve your family's stories
+          Memorybook - Preserve your family's stories
         </p>
       </td>
     </tr>
