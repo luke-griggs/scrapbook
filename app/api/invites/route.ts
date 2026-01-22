@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { promptInvites } from "@/lib/db/schema";
+import { promptInvites, familyMembers } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth-server";
 import { nanoid } from "nanoid";
 import { sendInviteEmail } from "@/lib/email";
@@ -22,6 +23,11 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get the sender's family
+    const membership = await db.query.familyMembers.findFirst({
+      where: eq(familyMembers.userId, session.user.id),
+    });
+
     // Generate unique token
     const token = nanoid(32);
 
@@ -29,7 +35,7 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Create invite record
+    // Create invite record with familyId
     const [invite] = await db
       .insert(promptInvites)
       .values({
@@ -37,6 +43,7 @@ export async function POST(request: Request) {
         senderId: session.user.id,
         senderName: session.user.name || session.user.email,
         recipientEmail,
+        familyId: membership?.familyId || null,
         token,
         expiresAt,
       })

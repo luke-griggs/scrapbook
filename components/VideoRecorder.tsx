@@ -48,12 +48,12 @@ export function VideoRecorder({
     error: uploadError,
   } = useVideoUpload();
 
-  // Attach stream to preview video
+  // Attach stream to preview video whenever state changes or stream is available
   useEffect(() => {
     if (videoPreviewRef.current && stream) {
       videoPreviewRef.current.srcObject = stream;
     }
-  }, [stream]);
+  }, [stream, state]);
 
   // Update state based on recording status
   useEffect(() => {

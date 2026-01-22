@@ -53,25 +53,8 @@ function SignInContent() {
       if (result.error) {
         setError(result.error.message || "Invalid credentials");
       } else {
-        // Refresh the router to establish the session first
-        router.refresh();
-        
-        // Small delay to ensure session is established before navigation
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        
-        // If coming from an invite, accept it (join the family) before redirecting
-        if (inviteToken) {
-          try {
-            await fetch(`/api/invites/${inviteToken}`, {
-              method: "POST",
-            });
-          } catch (err) {
-            console.error("Error accepting invite:", err);
-            // Continue anyway - they can still record
-          }
-        }
-        
         // Redirect to recording page if coming from invite, otherwise home
+        // Family membership is handled server-side in the record page
         if (inviteId) {
           router.push(`/record/${inviteId}`);
         } else {
