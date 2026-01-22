@@ -11,7 +11,10 @@ export const auth = betterAuth({
   baseURL,
   trustedOrigins: isDev
     ? ["http://localhost:3000"]
-    : [process.env.NEXT_PUBLIC_APP_URL || "https://scrapbook.vercel.app"],
+    : [
+        "https://memorybook.family",
+        "https://www.memorybook.family",
+      ],
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
