@@ -28,6 +28,7 @@ export function VideoRecorder({
   const [countdownNumber, setCountdownNumber] = useState<number | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const videoPlaybackRef = useRef<HTMLVideoElement>(null);
+  const startRecordingRef = useRef<(() => void) | null>(null);
 
   const {
     stream,
@@ -48,6 +49,11 @@ export function VideoRecorder({
     progress,
     error: uploadError,
   } = useVideoUpload();
+
+  // Keep startRecording ref in sync (avoids effect re-runs when function reference changes)
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
 
   // Attach stream to preview video element
   useEffect(() => {
@@ -83,9 +89,10 @@ export function VideoRecorder({
       return () => clearTimeout(timer);
     } else {
       // Countdown finished, start recording
-      startRecording();
+      // Use ref to avoid effect re-runs when startRecording reference changes
+      startRecordingRef.current?.();
     }
-  }, [state, countdownNumber, startRecording]);
+  }, [state, countdownNumber]);
 
   const handleRequestPermission = async () => {
     const granted = await requestPermissions();
