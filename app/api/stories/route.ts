@@ -35,31 +35,46 @@ export async function GET() {
       (invite) => invite.responses && invite.responses.length > 0
     );
 
-    // Build stories list with user info
-    const stories = await Promise.all(
-      invitesWithResponses.flatMap((invite) =>
-        invite.responses.map(async (response) => {
-          // Get the user who recorded the response
-          const responseUser = await db.query.user.findFirst({
-            where: eq(user.id, response.userId),
-          });
+    // Collect all unique user IDs from responses
+    const userIds = [
+      ...new Set(
+        invitesWithResponses.flatMap((invite) =>
+          invite.responses.map((response) => response.userId)
+        )
+      ),
+    ];
 
-          return {
-            id: response.id,
-            videoUrl: response.videoUrl,
-            thumbnailUrl: response.thumbnailUrl,
-            durationSeconds: response.durationSeconds,
-            createdAt: response.createdAt,
-            promptText: invite.promptText,
-            senderName: invite.senderName,
-            recorder: {
-              id: responseUser?.id || response.userId,
-              name: responseUser?.name || "Unknown",
-              image: responseUser?.image || null,
-            },
-          };
-        })
-      )
+    // Batch fetch all users in a single query
+    const users =
+      userIds.length > 0
+        ? await db.query.user.findMany({
+            where: inArray(user.id, userIds),
+          })
+        : [];
+
+    // Create a map for O(1) user lookups
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    // Build stories list with user info
+    const stories = invitesWithResponses.flatMap((invite) =>
+      invite.responses.map((response) => {
+        const responseUser = userMap.get(response.userId);
+
+        return {
+          id: response.id,
+          videoUrl: response.videoUrl,
+          thumbnailUrl: response.thumbnailUrl,
+          durationSeconds: response.durationSeconds,
+          createdAt: response.createdAt,
+          promptText: invite.promptText,
+          senderName: invite.senderName,
+          recorder: {
+            id: responseUser?.id || response.userId,
+            name: responseUser?.name || "Unknown",
+            image: responseUser?.image || null,
+          },
+        };
+      })
     );
 
     // Sort by most recent first
