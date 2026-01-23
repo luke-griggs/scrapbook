@@ -8,6 +8,7 @@ interface FamilyMember {
   name: string;
   email: string;
   avatarUrl: string | null;
+  isCurrentUser?: boolean;
 }
 
 interface FamilyData {
@@ -117,7 +118,7 @@ export default function FamilyPage() {
         {/* Members List */}
         <div>
           <h3 className="text-[14px] font-medium text-gray-600 mb-3">
-            Family Members ({(data?.members?.length || 0) + 1})
+            Family Members ({data?.members?.length || 0})
           </h3>
           
           {data?.members && data.members.length > 0 ? (
@@ -143,6 +144,9 @@ export default function FamilyPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-[15px] font-medium text-gray-900 truncate">
                       {member.name || "Unknown"}
+                      {member.isCurrentUser && (
+                        <span className="text-gray-400 font-normal"> (you)</span>
+                      )}
                     </p>
                     <p className="text-[13px] text-gray-500 truncate">
                       {member.email}
