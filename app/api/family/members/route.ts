@@ -34,12 +34,12 @@ export async function GET() {
     // Get the first family (for now, users belong to one family)
     const family = memberships[0].family;
     const members = family.members
-      .filter((m) => m.userId !== session.user.id)
+      .filter((m) => m.userId !== session.user.id && m.user != null)
       .map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-        email: m.user.email,
-        avatarUrl: m.user.image,
+        id: m.user!.id,
+        name: m.user!.name,
+        email: m.user!.email,
+        avatarUrl: m.user!.image,
       }));
 
     return NextResponse.json({

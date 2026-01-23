@@ -50,6 +50,13 @@
       "when": 1769193869830,
       "tag": "0006_overrated_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769197342913,
+      "tag": "0007_tearful_lord_hawal",
+      "breakpoints": true
     }
   ]
 }

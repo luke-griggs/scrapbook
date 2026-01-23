@@ -53,7 +53,9 @@ export const familyMembers = pgTable("family_members", {
   familyId: uuid("family_id")
     .notNull()
     .references(() => families.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull(), // References better-auth's user table (uses text IDs)
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   role: memberRoleEnum("role").default("member").notNull(),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
