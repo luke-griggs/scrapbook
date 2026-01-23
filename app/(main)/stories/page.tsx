@@ -1,6 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Video, MessageCircle, ChevronDown } from "lucide-react";
+
+interface Comment {
+  id: string;
+  content: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
+}
 
 interface Story {
   id: string;
@@ -21,6 +33,11 @@ export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [loadingComments, setLoadingComments] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [submittingComment, setSubmittingComment] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStories() {
@@ -37,6 +54,72 @@ export default function StoriesPage() {
 
     fetchStories();
   }, []);
+
+  const fetchComments = async (storyId: string) => {
+    if (comments[storyId]) return; // Already loaded
+    
+    setLoadingComments(storyId);
+    try {
+      const res = await fetch(`/api/stories/${storyId}/comments`);
+      const data = await res.json();
+      setComments((prev) => ({ ...prev, [storyId]: data.comments || [] }));
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    } finally {
+      setLoadingComments(null);
+    }
+  };
+
+  const toggleComments = (storyId: string) => {
+    if (expandedComments === storyId) {
+      setExpandedComments(null);
+    } else {
+      setExpandedComments(storyId);
+      fetchComments(storyId);
+    }
+  };
+
+  const handleSubmitComment = async (storyId: string) => {
+    const content = newComment[storyId]?.trim();
+    if (!content) return;
+
+    setSubmittingComment(storyId);
+    try {
+      const res = await fetch(`/api/stories/${storyId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      
+      if (data.comment) {
+        setComments((prev) => ({
+          ...prev,
+          [storyId]: [data.comment, ...(prev[storyId] || [])],
+        }));
+        setNewComment((prev) => ({ ...prev, [storyId]: "" }));
+      }
+    } catch (error) {
+      console.error("Error posting comment:", error);
+    } finally {
+      setSubmittingComment(null);
+    }
+  };
+
+  const formatCommentDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,9 +165,7 @@ export default function StoriesPage() {
         <div className="max-w-2xl mx-auto px-4 pt-24 pb-24">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-gray-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
+              <Video className="w-8 h-8 text-gray-400" />
             </div>
             <h2 className="text-[17px] font-semibold text-gray-900 mb-2">No stories yet</h2>
             <p className="text-[14px] text-gray-500 max-w-xs mx-auto">
@@ -149,6 +230,108 @@ export default function StoriesPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Comments button */}
+                  <button
+                    onClick={() => toggleComments(story.id)}
+                    className="mt-4 flex items-center gap-2 text-[14px] text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span>
+                      {comments[story.id]?.length 
+                        ? `${comments[story.id].length} comment${comments[story.id].length !== 1 ? "s" : ""}`
+                        : "Add a comment"}
+                    </span>
+                    <ChevronDown 
+                      className={`w-4 h-4 transition-transform ${expandedComments === story.id ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {/* Comments section */}
+                  {expandedComments === story.id && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      {/* New comment input */}
+                      <div className="flex gap-2 mb-4">
+                        <input
+                          type="text"
+                          placeholder="Write a comment..."
+                          value={newComment[story.id] || ""}
+                          onChange={(e) =>
+                            setNewComment((prev) => ({
+                              ...prev,
+                              [story.id]: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSubmitComment(story.id);
+                            }
+                          }}
+                          className="flex-1 px-3 py-2 text-[14px] bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
+                          disabled={submittingComment === story.id}
+                        />
+                        <button
+                          onClick={() => handleSubmitComment(story.id)}
+                          disabled={
+                            submittingComment === story.id ||
+                            !newComment[story.id]?.trim()
+                          }
+                          className="px-4 py-2 bg-gray-900 text-white text-[14px] font-medium rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {submittingComment === story.id ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            "Post"
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Comments list */}
+                      {loadingComments === story.id ? (
+                        <div className="flex justify-center py-4">
+                          <div className="w-5 h-5 border-2 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+                        </div>
+                      ) : comments[story.id]?.length > 0 ? (
+                        <div className="space-y-3">
+                          {comments[story.id].map((comment) => (
+                            <div key={comment.id} className="flex gap-2">
+                              <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {comment.user.image ? (
+                                  <img
+                                    src={comment.user.image}
+                                    alt={comment.user.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-[11px] font-medium text-gray-500">
+                                    {comment.user.name?.charAt(0)?.toUpperCase() || "?"}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-white rounded-lg px-3 py-2">
+                                  <p className="text-[13px] font-medium text-gray-900">
+                                    {comment.user.name}
+                                  </p>
+                                  <p className="text-[14px] text-gray-700 whitespace-pre-wrap break-words">
+                                    {comment.content}
+                                  </p>
+                                </div>
+                                <p className="text-[11px] text-gray-400 mt-1 ml-1">
+                                  {formatCommentDate(comment.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[13px] text-gray-500 text-center py-3">
+                          No comments yet. Be the first to share your thoughts!
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

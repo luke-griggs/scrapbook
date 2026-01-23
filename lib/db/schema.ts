@@ -110,6 +110,18 @@ export const responses = pgTable("responses", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Comments on video responses (stories)
+export const comments = pgTable("comments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  responseId: uuid("response_id")
+    .notNull()
+    .references(() => responses.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   familyMemberships: many(familyMembers),
@@ -155,9 +167,21 @@ export const promptInvitesRelations = relations(promptInvites, ({ one, many }) =
   responses: many(responses),
 }));
 
-export const responsesRelations = relations(responses, ({ one }) => ({
+export const responsesRelations = relations(responses, ({ one, many }) => ({
   promptInvite: one(promptInvites, {
     fields: [responses.promptInviteId],
     references: [promptInvites.id],
+  }),
+  comments: many(comments),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  response: one(responses, {
+    fields: [comments.responseId],
+    references: [responses.id],
+  }),
+  user: one(user, {
+    fields: [comments.userId],
+    references: [user.id],
   }),
 }));
