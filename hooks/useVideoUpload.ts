@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { upload as vercelUpload } from "@vercel/blob/client";
 
 interface UseVideoUploadReturn {
   upload: (blob: Blob) => Promise<string | null>;
@@ -14,34 +15,28 @@ export function useVideoUpload(): UseVideoUploadReturn {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const upload = useCallback(async (blob: Blob): Promise<string | null> => {
+  const upload = useCallback(async (videoBlob: Blob): Promise<string | null> => {
     setIsUploading(true);
     setError(null);
     setProgress(0);
 
     try {
-      const formData = new FormData();
-      formData.append("video", blob, `video-${Date.now()}.webm`);
+      const filename = `video-${Date.now()}.webm`;
 
-      // Simulate progress since fetch doesn't support upload progress natively
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => Math.min(prev + 10, 90));
-      }, 200);
-
-      const response = await fetch("/api/videos/upload", {
-        method: "POST",
-        body: formData,
+      // Use Vercel Blob client-side upload - bypasses API route size limits
+      const result = await vercelUpload(filename, videoBlob, {
+        access: "public",
+        handleUploadUrl: "/api/videos/upload",
+        onUploadProgress: (progressEvent) => {
+          const percentComplete = Math.round(
+            (progressEvent.loaded / progressEvent.total) * 100
+          );
+          setProgress(percentComplete);
+        },
       });
 
-      clearInterval(progressInterval);
-
-      if (!response.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await response.json();
       setProgress(100);
-      return data.url;
+      return result.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload video");
       return null;

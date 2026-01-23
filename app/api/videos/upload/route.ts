@@ -1,41 +1,37 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getSession } from "@/lib/auth-server";
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
+  const body = (await request.json()) as HandleUploadBody;
+
   try {
-    const session = await getSession();
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async () => {
+        // Authenticate user before allowing upload
+        const session = await getSession();
+        if (!session?.user) {
+          throw new Error("Unauthorized");
+        }
 
-    const formData = await request.formData();
-    const file = formData.get("video") as File;
-
-    if (!file) {
-      return NextResponse.json({ error: "No video file provided" }, { status: 400 });
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const extension = file.type.includes("webm") ? "webm" : "mp4";
-    const filename = `videos/${session.user.id}/${timestamp}.${extension}`;
-
-    // Upload to Vercel Blob
-    const blob = await put(filename, file, {
-      access: "public",
-      contentType: file.type,
+        return {
+          allowedContentTypes: ["video/webm", "video/mp4", "video/quicktime"],
+          maximumSizeInBytes: 500 * 1024 * 1024, // 500MB max
+        };
+      },
+      onUploadCompleted: async () => {
+        // No-op: response is saved client-side after upload
+      },
     });
 
-    return NextResponse.json({
-      url: blob.url,
-      pathname: blob.pathname,
-    });
+    return NextResponse.json(jsonResponse);
   } catch (error) {
-    console.error("Error uploading video:", error);
+    console.error("Error handling video upload:", error);
     return NextResponse.json(
-      { error: "Failed to upload video" },
-      { status: 500 }
+      { error: (error as Error).message },
+      { status: 400 }
     );
   }
 }
