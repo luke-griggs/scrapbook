@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FamilyMemberModal } from "@/components/FamilyMemberModal";
-import { Smile, GraduationCap, Send, Home, Heart, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
+import { Smile, GraduationCap, Plane, Home, Heart, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
 
 // Family-oriented categories and prompts
 const categories = [
@@ -90,7 +90,7 @@ const categories = [
 const categoryIcons: Record<string, React.ReactNode> = {
   baby: <Smile className="w-5 h-5" />,
   academic: <GraduationCap className="w-5 h-5" />,
-  plane: <Send className="w-5 h-5" />,
+  plane: <Plane className="w-5 h-5" />,
   home: <Home className="w-5 h-5" />,
   heart: <Heart className="w-5 h-5" />,
   lightbulb: <Lightbulb className="w-5 h-5" />,
