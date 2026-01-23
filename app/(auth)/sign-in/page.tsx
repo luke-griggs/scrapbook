@@ -89,7 +89,8 @@ function SignInContent() {
       // Note: If successful, the browser will redirect and this code won't run
     } catch (err) {
       console.error("Google sign-in exception:", err);
-      setError("Failed to sign in with Google. Please check your connection and try again.");
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(`Google sign-in failed: ${errorMessage}`);
       setLoading(false);
     }
   };

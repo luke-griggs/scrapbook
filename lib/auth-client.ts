@@ -2,13 +2,17 @@
 
 import { createAuthClient } from "better-auth/react";
 
-const isDev = process.env.NODE_ENV === "development";
-const baseURL = isDev
-  ? "http://localhost:3000"
-  : process.env.NEXT_PUBLIC_APP_URL || "https://memorybook.family";
+// Use the current origin in the browser, fallback for SSR
+const getBaseURL = () => {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  // Fallback for SSR
+  return process.env.NEXT_PUBLIC_APP_URL || "https://memorybook.family";
+};
 
 export const authClient = createAuthClient({
-  baseURL,
+  baseURL: getBaseURL(),
 });
 
 export const { signIn, signUp, signOut, useSession } = authClient;
