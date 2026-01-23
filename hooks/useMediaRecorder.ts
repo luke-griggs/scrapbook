@@ -98,9 +98,11 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
       setDuration(0);
       startTimeRef.current = Date.now();
 
-      // Determine supported mime type
-      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-        ? "video/webm;codecs=vp9"
+      // Determine supported mime type - include both video and audio codecs
+      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
+        ? "video/webm;codecs=vp8,opus"
         : MediaRecorder.isTypeSupported("video/webm")
         ? "video/webm"
         : "video/mp4";
@@ -108,6 +110,7 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
         videoBitsPerSecond: 2500000,
+        audioBitsPerSecond: 128000,
       });
 
       mediaRecorder.ondataavailable = (event) => {

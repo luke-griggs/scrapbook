@@ -243,13 +243,13 @@ export default function StoriesPage() {
             {stories.map((story) => (
               <div key={story.id} className="bg-gray-50 rounded-2xl overflow-hidden">
                 {/* Video */}
-                <div className="relative aspect-video bg-black">
+                <div className="relative bg-gray-100 flex justify-center rounded-t-2xl overflow-hidden">
                   <video
                     src={story.videoUrl}
                     poster={story.thumbnailUrl || undefined}
                     controls
                     playsInline
-                    className="w-full h-full object-contain"
+                    className="w-full max-w-md aspect-[9/16] max-h-[70vh] object-cover"
                     onPlay={() => setPlayingId(story.id)}
                     onPause={() => setPlayingId(null)}
                     onEnded={() => setPlayingId(null)}
