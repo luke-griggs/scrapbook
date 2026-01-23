@@ -2,6 +2,13 @@
 
 import { createAuthClient } from "better-auth/react";
 
-export const authClient = createAuthClient({});
+const isDev = process.env.NODE_ENV === "development";
+const baseURL = isDev
+  ? "http://localhost:3000"
+  : process.env.NEXT_PUBLIC_APP_URL || "https://memorybook.family";
+
+export const authClient = createAuthClient({
+  baseURL,
+});
 
 export const { signIn, signUp, signOut, useSession } = authClient;

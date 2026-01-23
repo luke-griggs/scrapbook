@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     const isDev = process.env.NODE_ENV === "development";
     const baseUrl = isDev
       ? "http://localhost:3000"
-      : process.env.NEXT_PUBLIC_APP_URL || "https://scrapbook.vercel.app";
+      : process.env.NEXT_PUBLIC_APP_URL || "https://memorybook.family";
     const inviteUrl = `${baseUrl}/invite/${token}`;
 
     // Send email if requested
