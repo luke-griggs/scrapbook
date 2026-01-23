@@ -43,6 +43,13 @@
       "when": 1769187920907,
       "tag": "0005_sweet_shadowcat",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769193869830,
+      "tag": "0006_overrated_gunslinger",
+      "breakpoints": true
     }
   ]
 }

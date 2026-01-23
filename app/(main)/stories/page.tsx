@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Video, MessageCircle, ChevronDown } from "lucide-react";
+import { Video, MessageCircle, ChevronDown, Trash2 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 interface Comment {
   id: string;
@@ -30,6 +31,7 @@ interface Story {
 }
 
 export default function StoriesPage() {
+  const { data: session } = useSession();
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -38,6 +40,8 @@ export default function StoriesPage() {
   const [loadingComments, setLoadingComments] = useState<string | null>(null);
   const [newComment, setNewComment] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
+  const [deletingStory, setDeletingStory] = useState<string | null>(null);
+  const [deletingComment, setDeletingComment] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStories() {
@@ -91,7 +95,7 @@ export default function StoriesPage() {
         body: JSON.stringify({ content }),
       });
       const data = await res.json();
-      
+
       if (data.comment) {
         setComments((prev) => ({
           ...prev,
@@ -103,6 +107,65 @@ export default function StoriesPage() {
       console.error("Error posting comment:", error);
     } finally {
       setSubmittingComment(null);
+    }
+  };
+
+  const handleDeleteStory = async (storyId: string) => {
+    if (!confirm("Are you sure you want to delete this story? This action cannot be undone.")) {
+      return;
+    }
+
+    setDeletingStory(storyId);
+    try {
+      const res = await fetch(`/api/stories/${storyId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setStories((prev) => prev.filter((s) => s.id !== storyId));
+        // Clean up comments state for deleted story
+        setComments((prev) => {
+          const newComments = { ...prev };
+          delete newComments[storyId];
+          return newComments;
+        });
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete story");
+      }
+    } catch (error) {
+      console.error("Error deleting story:", error);
+      alert("Failed to delete story");
+    } finally {
+      setDeletingStory(null);
+    }
+  };
+
+  const handleDeleteComment = async (storyId: string, commentId: string) => {
+    if (!confirm("Are you sure you want to delete this comment?")) {
+      return;
+    }
+
+    setDeletingComment(commentId);
+    try {
+      const res = await fetch(`/api/stories/${storyId}/comments/${commentId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setComments((prev) => ({
+          ...prev,
+          [storyId]: prev[storyId]?.filter((c) => c.id !== commentId) || [],
+        }));
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete comment");
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("Failed to delete comment");
+    } finally {
+      setDeletingComment(null);
     }
   };
 
@@ -229,6 +292,20 @@ export default function StoriesPage() {
                         {story.senderName && ` • Asked by ${story.senderName}`}
                       </p>
                     </div>
+                    {session?.user?.id === story.recorder.id && (
+                      <button
+                        onClick={() => handleDeleteStory(story.id)}
+                        disabled={deletingStory === story.id}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        title="Delete story"
+                      >
+                        {deletingStory === story.id ? (
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    )}
                   </div>
 
                   {/* Comments button */}
@@ -295,7 +372,7 @@ export default function StoriesPage() {
                       ) : comments[story.id]?.length > 0 ? (
                         <div className="space-y-3">
                           {comments[story.id].map((comment) => (
-                            <div key={comment.id} className="flex gap-2">
+                            <div key={comment.id} className="flex gap-2 group">
                               <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
                                 {comment.user.image ? (
                                   <img
@@ -311,9 +388,25 @@ export default function StoriesPage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="bg-white rounded-lg px-3 py-2">
-                                  <p className="text-[13px] font-medium text-gray-900">
-                                    {comment.user.name}
-                                  </p>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="text-[13px] font-medium text-gray-900">
+                                      {comment.user.name}
+                                    </p>
+                                    {session?.user?.id === comment.user.id && (
+                                      <button
+                                        onClick={() => handleDeleteComment(story.id, comment.id)}
+                                        disabled={deletingComment === comment.id}
+                                        className="p-1 text-gray-300 hover:text-red-500 rounded transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                                        title="Delete comment"
+                                      >
+                                        {deletingComment === comment.id ? (
+                                          <div className="w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                        ) : (
+                                          <Trash2 className="w-3 h-3" />
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
                                   <p className="text-[14px] text-gray-700 whitespace-pre-wrap break-words">
                                     {comment.content}
                                   </p>

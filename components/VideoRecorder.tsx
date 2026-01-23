@@ -13,6 +13,7 @@ interface VideoRecorderProps {
 type RecordingState =
   | "permission"
   | "ready"
+  | "countdown"
   | "recording"
   | "review"
   | "uploading"
@@ -24,6 +25,7 @@ export function VideoRecorder({
   onComplete,
 }: VideoRecorderProps) {
   const [state, setState] = useState<RecordingState>("permission");
+  const [countdownNumber, setCountdownNumber] = useState<number | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const videoPlaybackRef = useRef<HTMLVideoElement>(null);
 
@@ -44,31 +46,46 @@ export function VideoRecorder({
   const {
     upload,
     progress,
-    isUploading,
     error: uploadError,
   } = useVideoUpload();
 
-  // Attach stream to preview video whenever state changes or stream is available
+  // Attach stream to preview video element
   useEffect(() => {
     if (videoPreviewRef.current && stream) {
       videoPreviewRef.current.srcObject = stream;
     }
-  }, [stream, state]);
+  }, [stream]);
 
-  // Update state based on recording status
+  // Update state when permissions are granted
   useEffect(() => {
     if (hasPermissions && state === "permission") {
       setState("ready");
     }
   }, [hasPermissions, state]);
 
+  // Update state when recording starts/stops
   useEffect(() => {
-    if (isRecording) {
+    if (isRecording && state === "countdown") {
       setState("recording");
-    } else if (recordedBlob && !isRecording) {
+    } else if (!isRecording && recordedBlob && state === "recording") {
       setState("review");
     }
-  }, [isRecording, recordedBlob]);
+  }, [isRecording, recordedBlob, state]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (state !== "countdown" || countdownNumber === null) return;
+
+    if (countdownNumber > 0) {
+      const timer = setTimeout(() => {
+        setCountdownNumber(countdownNumber - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Countdown finished, start recording
+      startRecording();
+    }
+  }, [state, countdownNumber, startRecording]);
 
   const handleRequestPermission = async () => {
     const granted = await requestPermissions();
@@ -78,7 +95,8 @@ export function VideoRecorder({
   };
 
   const handleStartRecording = () => {
-    startRecording();
+    setCountdownNumber(3);
+    setState("countdown");
   };
 
   const handleStopRecording = () => {
@@ -87,7 +105,8 @@ export function VideoRecorder({
 
   const handleRetake = () => {
     resetRecording();
-    setState("ready");
+    setCountdownNumber(3);
+    setState("countdown");
   };
 
   const handleContinue = async () => {
@@ -98,7 +117,6 @@ export function VideoRecorder({
     const videoUrl = await upload(recordedBlob);
 
     if (videoUrl) {
-      // Save response to database
       try {
         const response = await fetch("/api/responses", {
           method: "POST",
@@ -135,10 +153,75 @@ export function VideoRecorder({
 
   const error = recorderError || uploadError;
 
+  // Determine if we should show the live camera preview
+  const showLivePreview = state === "countdown" || state === "recording";
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Main content area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 relative overflow-hidden">
+
+        {/* Live camera preview - always mounted when we have stream, visibility controlled */}
+        {stream && (
+          <div
+            className={`absolute inset-0 bg-black flex flex-col ${
+              showLivePreview ? "visible" : "invisible pointer-events-none"
+            }`}
+          >
+            <div className="flex-1 relative min-h-0">
+              <video
+                ref={videoPreviewRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
+              />
+
+              {/* Countdown overlay */}
+              {state === "countdown" && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                  {countdownNumber !== null && countdownNumber > 0 && (
+                    <span
+                      key={countdownNumber}
+                      className="text-9xl font-bold text-gray-900 animate-countdown"
+                    >
+                      {countdownNumber}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Recording indicator */}
+              {state === "recording" && (
+                <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-white text-sm font-medium">
+                    {formatDuration(duration)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom section for recording state */}
+            {state === "recording" && (
+              <div className="flex-shrink-0 bg-gradient-to-t from-white via-white to-white px-6 pt-4 pb-8">
+                <p className="text-gray-900 text-lg font-medium text-center leading-relaxed max-w-md mx-auto mb-6">
+                  &quot;{promptText}&quot;
+                </p>
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleStopRecording}
+                    className="w-16 h-16 rounded-full bg-gray-900 flex items-center justify-center shadow-lg"
+                  >
+                    <div className="w-6 h-6 rounded-sm bg-white" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Permission state */}
         {state === "permission" && (
           <div className="text-center max-w-sm">
@@ -182,7 +265,7 @@ export function VideoRecorder({
         {state === "ready" && (
           <div className="text-center max-w-md">
             <p className="text-gray-900 text-2xl font-medium leading-relaxed mb-12">
-              "{promptText}"
+              &quot;{promptText}&quot;
             </p>
             <button
               onClick={handleStartRecording}
@@ -193,46 +276,10 @@ export function VideoRecorder({
           </div>
         )}
 
-        {/* Recording state - show video with prompt overlay */}
-        {state === "recording" && (
-          <div className="absolute inset-0 bg-black">
-            <video
-              ref={videoPreviewRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-              style={{ transform: "scaleX(-1)" }}
-            />
-            {/* Prompt overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-20 pb-32 px-6">
-              <p className="text-white text-xl font-medium text-center leading-relaxed max-w-md mx-auto">
-                "{promptText}"
-              </p>
-            </div>
-            {/* Recording indicator */}
-            <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-white text-sm font-medium">
-                {formatDuration(duration)}
-              </span>
-            </div>
-            {/* Stop button */}
-            <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-              <button
-                onClick={handleStopRecording}
-                className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg"
-              >
-                <div className="w-6 h-6 rounded-sm bg-gray-900" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Review state - show recorded video */}
         {state === "review" && recordedUrl && (
           <div className="absolute inset-0 bg-black flex flex-col">
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-h-0">
               <video
                 ref={videoPlaybackRef}
                 src={recordedUrl}
@@ -241,8 +288,7 @@ export function VideoRecorder({
                 className="w-full h-full object-contain"
               />
             </div>
-            {/* Bottom buttons */}
-            <div className="bg-white px-6 py-6 pb-10 flex gap-4">
+            <div className="flex-shrink-0 bg-white px-6 py-6 pb-8 flex gap-4">
               <button
                 onClick={handleRetake}
                 className="flex-1 py-4 px-6 bg-white text-gray-900 text-base font-medium rounded-full border-2 border-gray-200 hover:bg-gray-50 transition-colors"
@@ -298,7 +344,7 @@ export function VideoRecorder({
               Story Saved!
             </h2>
             <p className="text-gray-500 text-base">
-              Your family will love this.
+              Thanks for sharing!
             </p>
           </div>
         )}

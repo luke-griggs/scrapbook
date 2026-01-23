@@ -102,7 +102,9 @@ export const responses = pgTable("responses", {
   promptInviteId: uuid("prompt_invite_id")
     .notNull()
     .references(() => promptInvites.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   durationSeconds: varchar("duration_seconds", { length: 10 }),
@@ -116,7 +118,9 @@ export const comments = pgTable("comments", {
   responseId: uuid("response_id")
     .notNull()
     .references(() => responses.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -171,6 +175,10 @@ export const responsesRelations = relations(responses, ({ one, many }) => ({
   promptInvite: one(promptInvites, {
     fields: [responses.promptInviteId],
     references: [promptInvites.id],
+  }),
+  user: one(user, {
+    fields: [responses.userId],
+    references: [user.id],
   }),
   comments: many(comments),
 }));

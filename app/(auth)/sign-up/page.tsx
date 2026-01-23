@@ -44,6 +44,11 @@ function SignUpContent() {
     e.preventDefault();
     setError("");
 
+    if (!name.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -162,7 +167,8 @@ function SignUpContent() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Full name (optional)"
+                placeholder="First name"
+                required
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
               />
             </div>

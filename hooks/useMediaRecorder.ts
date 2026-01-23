@@ -29,21 +29,32 @@ export function useMediaRecorder(): UseMediaRecorderReturn {
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
 
-  // Cleanup on unmount
+  // Keep refs in sync with state
+  useEffect(() => {
+    streamRef.current = stream;
+  }, [stream]);
+
+  useEffect(() => {
+    recordedUrlRef.current = recordedUrl;
+  }, [recordedUrl]);
+
+  // Cleanup only on unmount
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
-      if (recordedUrl) {
-        URL.revokeObjectURL(recordedUrl);
+      if (recordedUrlRef.current) {
+        URL.revokeObjectURL(recordedUrlRef.current);
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, [stream, recordedUrl]);
+  }, []);
 
   const requestPermissions = useCallback(async (): Promise<boolean> => {
     try {
