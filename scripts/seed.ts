@@ -16,6 +16,9 @@ const seedData = [
       "Tell us about your childhood home",
       "What's your earliest memory?",
       "What games did you play as a child?",
+      "Describe a time you got in trouble as a kid",
+      "Tell us about a time you got in trouble at school",
+      "Describe a childhood moment when you realized you were in big trouble",
     ],
   },
   {
@@ -28,6 +31,7 @@ const seedData = [
       "What music did you listen to as a teenager?",
       "What was your first job?",
       "What did you dream of becoming?",
+      "What was the moment you felt like an adult for the first time?",
     ],
   },
   {
@@ -52,6 +56,7 @@ const seedData = [
       "Tell us about a memorable family gathering",
       "What values did your parents teach you?",
       "What traditions do you want to pass on?",
+      "What's a lesson someone in the family taught you that stuck with you?",
     ],
   },
   {
@@ -76,6 +81,18 @@ const seedData = [
       "What are you most proud of?",
       "Tell us about a moment that changed your life",
       "What advice would you give your younger self?",
+    ],
+  },
+  {
+    name: "Learning the Hard Way",
+    slug: "learning-hard-way",
+    description: "Lessons from mistakes and tough moments",
+    prompts: [
+      "Describe a mistake you made that taught you something important.",
+      "Describe a time you learned a hard lesson",
+      "Tell us about a moment when you got caught doing something you shouldn't have been doing.",
+      "Tell us about an embarrassing moment you can laugh about now.",
+      "Describe a time someone gave you tough love and it changed you.",
     ],
   },
 ];

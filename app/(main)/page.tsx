@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FamilyMemberModal } from "@/components/FamilyMemberModal";
-import { Smile, GraduationCap, Plane, Home, Heart, Lightbulb, ChevronRight, ChevronLeft } from "lucide-react";
+import { Smile, GraduationCap, Plane, Home, Heart, Lightbulb, ChevronRight, ChevronLeft, Gavel } from "lucide-react";
 
 // Family-oriented categories and prompts
 const categories = [
@@ -17,6 +17,9 @@ const categories = [
       { id: "3", text: "Tell us about your childhood home" },
       { id: "4", text: "What's your earliest memory?" },
       { id: "5", text: "What games did you play as a child?" },
+      { id: "36", text: "Describe a time you got in trouble as a kid" },
+      { id: "37", text: "Tell us about a time you got in trouble at school" },
+      { id: "38", text: "Describe a childhood moment when you realized you were in big trouble" },
     ],
   },
   {
@@ -30,10 +33,24 @@ const categories = [
       { id: "8", text: "What music did you listen to as a teenager?" },
       { id: "9", text: "What was your first job?" },
       { id: "10", text: "What did you dream of becoming?" },
+      { id: "39", text: "What was the moment you felt like an adult for the first time?" },
     ],
   },
   {
     id: "3",
+    name: "Learning the Hard Way",
+    slug: "learning-hard-way",
+    icon: "zap",
+    prompts: [
+      { id: "31", text: "Describe a mistake you made that taught you something important." },
+      { id: "32", text: "Describe a time you learned a hard lesson" },
+      { id: "33", text: "Tell us about a moment when you got caught doing something you shouldn't have been doing." },
+      { id: "34", text: "Tell us about an embarrassing moment you can laugh about now." },
+      { id: "35", text: "Describe a time someone gave you tough love and it changed you." },
+    ],
+  },
+  {
+    id: "4",
     name: "Adventures in Travel",
     slug: "adventures-travel",
     icon: "plane",
@@ -46,7 +63,7 @@ const categories = [
     ],
   },
   {
-    id: "4",
+    id: "5",
     name: "Family Traditions",
     slug: "family-traditions",
     icon: "home",
@@ -56,10 +73,11 @@ const categories = [
       { id: "18", text: "Tell us about a memorable family gathering" },
       { id: "19", text: "What values did your parents teach you?" },
       { id: "20", text: "What traditions do you want to pass on?" },
+      { id: "40", text: "What's a lesson someone in the family taught you that stuck with you?" },
     ],
   },
   {
-    id: "5",
+    id: "6",
     name: "Love & Relationships",
     slug: "love-relationships",
     icon: "heart",
@@ -72,7 +90,7 @@ const categories = [
     ],
   },
   {
-    id: "6",
+    id: "7",
     name: "Life Lessons",
     slug: "life-lessons",
     icon: "lightbulb",
@@ -94,6 +112,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   home: <Home className="w-5 h-5" />,
   heart: <Heart className="w-5 h-5" />,
   lightbulb: <Lightbulb className="w-5 h-5" />,
+  zap: <Gavel className="w-5 h-5" />,
 };
 
 function PromptCard({ prompt, onClick }: { prompt: { id: string; text: string }; onClick?: () => void }) {
