@@ -289,9 +289,10 @@ export function VideoRecorder({
             <div className="flex-1 relative min-h-0">
               <video
                 ref={videoPlaybackRef}
-                src={recordedUrl}
+                src={`${recordedUrl}#t=0.001`}
                 controls
                 playsInline
+                preload="metadata"
                 className="w-full h-full object-contain"
               />
             </div>

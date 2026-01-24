@@ -34,16 +34,14 @@ export async function GET() {
     // Get the first family (for now, users belong to one family)
     const family = memberships[0].family;
     const members = family.members
-      .filter((m) => m.user != null)
+      // Exclude the current user - they shouldn't send to themselves
+      .filter((m) => m.user != null && m.userId !== session.user.id)
       .map((m) => ({
         id: m.user!.id,
         name: m.user!.name,
         email: m.user!.email,
         avatarUrl: m.user!.image,
-        isCurrentUser: m.userId === session.user.id,
-      }))
-      // Sort so current user appears first
-      .sort((a, b) => (b.isCurrentUser ? 1 : 0) - (a.isCurrentUser ? 1 : 0));
+      }));
 
     return NextResponse.json({
       family: { id: family.id, name: family.name },

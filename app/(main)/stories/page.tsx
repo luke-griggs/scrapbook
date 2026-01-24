@@ -245,10 +245,11 @@ export default function StoriesPage() {
                 {/* Video */}
                 <div className="relative bg-gray-100 flex justify-center rounded-t-2xl overflow-hidden">
                   <video
-                    src={story.videoUrl}
+                    src={`${story.videoUrl}#t=0.001`}
                     poster={story.thumbnailUrl || undefined}
                     controls
                     playsInline
+                    preload="metadata"
                     className="w-full max-w-md aspect-[9/16] max-h-[70vh] object-cover"
                     onPlay={() => setPlayingId(story.id)}
                     onPause={() => setPlayingId(null)}
