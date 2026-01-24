@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Video, MessageCircle, ChevronDown, Trash2 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
+import { useStories } from "@/hooks/useStories";
 
 interface Comment {
   id: string;
@@ -32,8 +34,8 @@ interface Story {
 
 export default function StoriesPage() {
   const { data: session } = useSession();
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: stories = [], isLoading: loading } = useStories();
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
@@ -42,22 +44,6 @@ export default function StoriesPage() {
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [deletingStory, setDeletingStory] = useState<string | null>(null);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchStories() {
-      try {
-        const res = await fetch("/api/stories");
-        const data = await res.json();
-        setStories(data.stories || []);
-      } catch (error) {
-        console.error("Error fetching stories:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStories();
-  }, []);
 
   const fetchComments = async (storyId: string) => {
     if (comments[storyId]) return; // Already loaded
@@ -116,13 +102,21 @@ export default function StoriesPage() {
     }
 
     setDeletingStory(storyId);
+    
+    // Snapshot previous state for rollback
+    const previousStories = queryClient.getQueryData<Story[]>(["stories"]);
+    
+    // Optimistically remove from cache
+    queryClient.setQueryData<Story[]>(["stories"], (old) =>
+      old?.filter((s) => s.id !== storyId)
+    );
+
     try {
       const res = await fetch(`/api/stories/${storyId}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        setStories((prev) => prev.filter((s) => s.id !== storyId));
         // Clean up comments state for deleted story
         setComments((prev) => {
           const newComments = { ...prev };
@@ -130,10 +124,14 @@ export default function StoriesPage() {
           return newComments;
         });
       } else {
+        // Rollback on error
+        queryClient.setQueryData(["stories"], previousStories);
         const data = await res.json();
         alert(data.error || "Failed to delete story");
       }
     } catch (error) {
+      // Rollback on error
+      queryClient.setQueryData(["stories"], previousStories);
       console.error("Error deleting story:", error);
       alert("Failed to delete story");
     } finally {
