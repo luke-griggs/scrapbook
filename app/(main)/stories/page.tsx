@@ -125,13 +125,23 @@ export default function StoriesPage() {
         });
       } else {
         // Rollback on error
-        queryClient.setQueryData(["stories"], previousStories);
+        if (previousStories !== undefined) {
+          queryClient.setQueryData(["stories"], previousStories);
+        } else {
+          // Cache was empty, refetch from server to restore correct state
+          queryClient.invalidateQueries({ queryKey: ["stories"] });
+        }
         const data = await res.json();
         alert(data.error || "Failed to delete story");
       }
     } catch (error) {
       // Rollback on error
-      queryClient.setQueryData(["stories"], previousStories);
+      if (previousStories !== undefined) {
+        queryClient.setQueryData(["stories"], previousStories);
+      } else {
+        // Cache was empty, refetch from server to restore correct state
+        queryClient.invalidateQueries({ queryKey: ["stories"] });
+      }
       console.error("Error deleting story:", error);
       alert("Failed to delete story");
     } finally {
