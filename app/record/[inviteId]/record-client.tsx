@@ -35,7 +35,7 @@ export function RecordClient({ inviteId, promptText }: RecordClientProps) {
       <div className="h-screen bg-white flex flex-col items-center justify-center px-6">
         <div className="max-w-md w-full text-center">
           {/* Prompt */}
-          <p className="text-gray-900 text-xl font-medium leading-relaxed mb-10">
+          <p className="text-gray-900 text-2xl font-semibold leading-relaxed mb-10">
             &quot;{promptText}&quot;
           </p>
 
@@ -67,7 +67,7 @@ export function RecordClient({ inviteId, promptText }: RecordClientProps) {
                 </svg>
               </div>
               <div className="text-left">
-                <h3 className="text-gray-900 text-lg font-semibold">Record a Video</h3>
+                <h3 className="text-gray-900 text-lg font-medium">Record a Video</h3>
                 <p className="text-gray-500 text-sm">Share your story face-to-face</p>
               </div>
             </button>
@@ -94,7 +94,7 @@ export function RecordClient({ inviteId, promptText }: RecordClientProps) {
                 </svg>
               </div>
               <div className="text-left">
-                <h3 className="text-gray-900 text-lg font-semibold">Write a Response</h3>
+                <h3 className="text-gray-900 text-lg font-medium">Write a Response</h3>
                 <p className="text-gray-500 text-sm">Type out your story in words</p>
               </div>
             </button>
