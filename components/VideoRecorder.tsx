@@ -26,6 +26,7 @@ export function VideoRecorder({
 }: VideoRecorderProps) {
   const [state, setState] = useState<RecordingState>("permission");
   const [countdownNumber, setCountdownNumber] = useState<number | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const videoPlaybackRef = useRef<HTMLVideoElement>(null);
   const startRecordingRef = useRef<(() => void) | null>(null);
@@ -120,6 +121,7 @@ export function VideoRecorder({
     if (!recordedBlob) return;
 
     setState("uploading");
+    setApiError(null);
 
     const videoUrl = await upload(recordedBlob);
 
@@ -141,10 +143,12 @@ export function VideoRecorder({
             onComplete();
           }, 2000);
         } else {
-          throw new Error("Failed to save response");
+          const data = await response.json();
+          throw new Error(data.error || "Failed to save response");
         }
-      } catch (error) {
-        console.error("Error saving response:", error);
+      } catch (err) {
+        console.error("Error saving response:", err);
+        setApiError(err instanceof Error ? err.message : "Failed to save response");
         setState("review");
       }
     } else {
@@ -158,7 +162,7 @@ export function VideoRecorder({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const error = recorderError || uploadError;
+  const error = recorderError || uploadError || apiError;
 
   // Determine if we should show the live camera preview
   const showLivePreview = state === "countdown" || state === "recording";
@@ -296,19 +300,26 @@ export function VideoRecorder({
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="flex-shrink-0 bg-white px-6 py-6 pb-8 flex gap-4">
-              <button
-                onClick={handleRetake}
-                className="flex-1 py-4 px-6 bg-white text-gray-900 text-base font-medium rounded-full border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                Retake
-              </button>
-              <button
-                onClick={handleContinue}
-                className="flex-1 py-4 px-6 bg-gray-900 text-white text-base font-medium rounded-full hover:bg-gray-800 transition-colors"
-              >
-                Continue
-              </button>
+            <div className="flex-shrink-0 bg-white px-6 py-6 pb-8">
+              {apiError && (
+                <p className="text-red-600 text-sm mb-4 bg-red-50 rounded-xl p-4">
+                  {apiError}
+                </p>
+              )}
+              <div className="flex gap-4">
+                <button
+                  onClick={handleRetake}
+                  className="flex-1 py-4 px-6 bg-white text-gray-900 text-base font-medium rounded-full border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  Retake
+                </button>
+                <button
+                  onClick={handleContinue}
+                  className="flex-1 py-4 px-6 bg-gray-900 text-white text-base font-medium rounded-full hover:bg-gray-800 transition-colors"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
           </div>
         )}
