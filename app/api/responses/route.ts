@@ -12,11 +12,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { promptInviteId, videoUrl, thumbnailUrl, durationSeconds } = body;
+    const { promptInviteId, videoUrl, textContent, thumbnailUrl, durationSeconds } = body;
 
-    if (!promptInviteId || !videoUrl) {
+    // Require either videoUrl or textContent
+    if (!promptInviteId || (!videoUrl && !textContent)) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields. Provide either a video or text response." },
         { status: 400 }
       );
     }
@@ -46,9 +47,10 @@ export async function POST(request: Request) {
       .values({
         promptInviteId,
         userId: session.user.id,
-        videoUrl,
-        thumbnailUrl,
-        durationSeconds: durationSeconds?.toString(),
+        videoUrl: videoUrl || null,
+        textContent: textContent || null,
+        thumbnailUrl: thumbnailUrl || null,
+        durationSeconds: durationSeconds?.toString() || null,
       })
       .returning();
 
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
       response: {
         id: response.id,
         videoUrl: response.videoUrl,
+        textContent: response.textContent,
       },
     });
   } catch (error) {

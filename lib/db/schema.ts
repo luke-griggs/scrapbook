@@ -98,7 +98,7 @@ export const promptInvites = pgTable("prompt_invites", {
   acceptedAt: timestamp("accepted_at"),
 });
 
-// Video responses to prompts
+// Responses to prompts (video or text)
 export const responses = pgTable("responses", {
   id: uuid("id").defaultRandom().primaryKey(),
   promptInviteId: uuid("prompt_invite_id")
@@ -107,7 +107,8 @@ export const responses = pgTable("responses", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  videoUrl: text("video_url").notNull(),
+  videoUrl: text("video_url"),
+  textContent: text("text_content"),
   thumbnailUrl: text("thumbnail_url"),
   durationSeconds: varchar("duration_seconds", { length: 10 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),

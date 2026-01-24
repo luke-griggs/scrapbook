@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Video, MessageCircle, ChevronDown, Trash2 } from "lucide-react";
+import { Video, MessageCircle, ChevronDown, Trash2, FileText } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { useStories } from "@/hooks/useStories";
 
@@ -19,7 +19,8 @@ interface Comment {
 
 interface Story {
   id: string;
-  videoUrl: string;
+  videoUrl: string | null;
+  textContent: string | null;
   thumbnailUrl: string | null;
   durationSeconds: string | null;
   createdAt: string;
@@ -240,7 +241,7 @@ export default function StoriesPage() {
             </div>
             <h2 className="text-[17px] font-semibold text-gray-900 mb-2">No stories yet</h2>
             <p className="text-[14px] text-gray-500 max-w-xs mx-auto">
-              Send a question to a family member to start collecting stories
+              Send a question to a family member to start collecting stories and memories
             </p>
           </div>
         </div>
@@ -250,25 +251,39 @@ export default function StoriesPage() {
           <div className="space-y-6">
             {stories.map((story) => (
               <div key={story.id} className="bg-gray-50 rounded-2xl overflow-hidden">
-                {/* Video */}
-                <div className="relative bg-gray-100 flex justify-center rounded-t-2xl overflow-hidden">
-                  <video
-                    src={`${story.videoUrl}#t=0.001`}
-                    poster={story.thumbnailUrl || undefined}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    className="w-full max-w-md aspect-[9/16] max-h-[70vh] object-cover"
-                    onPlay={() => setPlayingId(story.id)}
-                    onPause={() => setPlayingId(null)}
-                    onEnded={() => setPlayingId(null)}
-                  />
-                  {story.durationSeconds && playingId !== story.id && (
-                    <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[12px] font-medium px-2 py-1 rounded">
-                      {formatDuration(story.durationSeconds)}
+                {/* Video or Text Content */}
+                {story.videoUrl ? (
+                  <div className="relative bg-gray-100 flex justify-center rounded-t-2xl overflow-hidden">
+                    <video
+                      src={`${story.videoUrl}#t=0.001`}
+                      poster={story.thumbnailUrl || undefined}
+                      controls
+                      playsInline
+                      preload="metadata"
+                      className="w-full max-w-md aspect-[9/16] max-h-[70vh] object-cover"
+                      onPlay={() => setPlayingId(story.id)}
+                      onPause={() => setPlayingId(null)}
+                      onEnded={() => setPlayingId(null)}
+                    />
+                    {story.durationSeconds && playingId !== story.id && (
+                      <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[12px] font-medium px-2 py-1 rounded">
+                        {formatDuration(story.durationSeconds)}
+                      </div>
+                    )}
+                  </div>
+                ) : story.textContent ? (
+                  <div className="bg-white border-b border-gray-100">
+                    <div className="p-6">
+                      <div className="flex items-center gap-2 text-gray-400 mb-3">
+                        <FileText className="w-4 h-4" />
+                        <span className="text-xs font-medium uppercase tracking-wide">Written Response</span>
+                      </div>
+                      <p className="text-gray-900 text-[15px] leading-relaxed whitespace-pre-wrap">
+                        {story.textContent}
+                      </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : null}
 
                 {/* Info */}
                 <div className="p-4">

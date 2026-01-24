@@ -63,6 +63,7 @@ export async function GET() {
         return {
           id: response.id,
           videoUrl: response.videoUrl,
+          textContent: response.textContent,
           thumbnailUrl: response.thumbnailUrl,
           durationSeconds: response.durationSeconds,
           createdAt: response.createdAt,

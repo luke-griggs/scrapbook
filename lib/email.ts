@@ -70,12 +70,19 @@ function generateInviteEmailHtml({
                 </p>
               </div>
 
-              <!-- CTA Button -->
+              <!-- CTA Buttons -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="center">
+                  <td align="center" style="padding-bottom: 12px;">
                     <a href="${inviteUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 500; padding: 14px 32px; border-radius: 50px;">
-                      Record Your Answer
+                      Record a Video
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <a href="${inviteUrl}?mode=text" style="display: inline-block; background-color: #ffffff; color: #111827; text-decoration: none; font-size: 15px; font-weight: 500; padding: 12px 30px; border-radius: 50px; border: 2px solid #e5e7eb;">
+                      Write a Response
                     </a>
                   </td>
                 </tr>

@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Story {
   id: string;
-  videoUrl: string;
+  videoUrl: string | null;
+  textContent: string | null;
   thumbnailUrl: string | null;
   durationSeconds: string | null;
   createdAt: string;
